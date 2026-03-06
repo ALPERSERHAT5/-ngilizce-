@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İngilizce Kelime Yarışması</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .quiz-area {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .question-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .question-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .option {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .option:hover {
+            background: #f0f0f0;
+            border-color: #667eea;
+        }
+        
+        .option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+            width: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .scores-area {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .scores-area h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+        }
+        
+        tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .progress {
+            margin: 20px 0;
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .result {
+            text-align: center;
+            padding: 20px;
+            background: #d4edda;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+    <!-- SheetJS kütüphanesi - Excel işlemleri için -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 İngilizce Kelime Yarışması</h1>
+        
+        <div class="quiz-area" id="quizArea">
+            <div id="studentInfo">
+                <h2>Öğrenci Bilgileri</h2>
+                <div class="input-group">
+                    <label>Öğrenci Adı:</label>
+                    <input type="text" id="studentName" placeholder="Örneğin: Ahmet Yılmaz">
+                </div>
+                <div class="input-group">
+                    <label>Öğrenci Numarası:</label>
+                    <input type="text" id="studentNumber" placeholder="Örneğin: 2024001">
+                </div>
+                <button onclick="startQuiz()" id="startBtn">Yarışmaya Başla 🚀</button>
+            </div>
+            
+            <div id="quiz" style="display: none;">
+                <div class="progress" id="progress">Soru 1 / 5</div>
+                <div class="question-container">
+                    <div class="question-text" id="question"></div>
+                    <div class="options" id="options"></div>
+                </div>
+                <button onclick="nextQuestion()" id="nextBtn">Sonraki Soru ➡️</button>
+            </div>
+        </div>
+        
+        <div class="scores-area">
+            <h2>🏆 Skor Tablosu</h2>
+            <table id="scoreTable">
+                <thead>
+                    <tr>
+                        <th>Sıra</th>
+                        <th>Ad Soyad</th>
+                        <th>Numara</th>
+                        <th>Doğru</th>
+                        <th>Yanlış</th>
+                        <th>Puan</th>
+                        <th>Tarih</th>
+                    </tr>
+                </thead>
+                <tbody id="scoreBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Soru bankası
+        const questions = [
+            {
+                question: "'Apple' kelimesinin Türkçesi nedir?",
+                options: ["Armut", "Elma", "Muz", "Portakal"],
+                correct: 1
+            },
+            {
+                question: "'House' kelimesinin Türkçesi nedir?",
+                options: ["Ev", "Okul", "Hastane", "İş"],
+                correct: 0
+            },
+            {
+                question: "'Cat' kelimesinin Türkçesi nedir?",
+                options: ["Köpek", "Kuş", "Kedi", "Balık"],
+                correct: 2
+            },
+            {
+                question: "'Book' kelimesinin Türkçesi nedir?",
+                options: ["Defter", "Kitap", "Kalem", "Silgi"],
+                correct: 1
+            },
+            {
+                question: "'Car' kelimesinin Türkçesi nedir?",
+                options: ["Otobüs", "Bisiklet", "Araba", "Tren"],
+                correct: 2
+            }
+        ];
+
+        let currentQuestion = 0;
+        let answers = [];
+        let studentName = '';
+        let studentNumber = '';
+
+        // Sayfa yüklendiğinde kayıtları yükle
+        window.onload = function() {
+            loadScores();
+        };
+
+        function startQuiz() {
+            studentName = document.getElementById('studentName').value.trim();
+            studentNumber = document.getElementById('studentNumber').value.trim();
+            
+            if (!studentName || !studentNumber) {
+                alert('Lütfen öğrenci adı ve numarasını girin!');
+                return;
+            }
+            
+            document.getElementById('studentInfo').style.display = 'none';
+            document.getElementById('quiz').style.display = 'block';
+            
+            currentQuestion = 0;
+            answers = [];
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentQuestion];
+            document.getElementById('progress').textContent = `Soru ${currentQuestion + 1} / ${questions.length}`;
+            document.getElementById('question').textContent = q.question;
+            
+            let optionsHtml = '';
+            q.options.forEach((option, index) => {
+                optionsHtml += `<div class="option" onclick="selectOption(${index})" id="option-${index}">${option}</div>`;
+            });
+            
+            document.getElementById('options').innerHTML = optionsHtml;
+            document.getElementById('nextBtn').disabled = true;
+        }
+
+        function selectOption(optionIndex) {
+            // Tüm seçeneklerin seçili sınıfını kaldır
+            for (let i = 0; i < 4; i++) {
+                const opt = document.getElementById(`option-${i}`);
+                if (opt) opt.classList.remove('selected');
+            }
+            
+            // Seçilen seçeneği işaretle
+            document.getElementById(`option-${optionIndex}`).classList.add('selected');
+            
+            // Cevabı kaydet
+            answers[currentQuestion] = optionIndex;
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                showQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function finishQuiz() {
+            // Doğru ve yanlış sayılarını hesapla
+            let correct = 0;
+            let wrong = 0;
+            
+            questions.forEach((q, index) => {
+                if (answers[index] === q.correct) {
+                    correct++;
+                } else {
+                    wrong++;
+                }
+            });
+            
+            const points = correct * 20;
+            
+            // Sonuçları göster
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = `
+                <h3>Yarışma Tamamlandı! 🎉</h3>
+                <p>Doğru sayısı: ${correct}</p>
+                <p>Yanlış sayısı: ${wrong}</p>
+                <p>Toplam puan: ${points}</p>
+                <button onclick="location.reload()">Yeni Yarışma Başlat</button>
+            `;
+            
+            document.getElementById('quiz').innerHTML = '';
+            document.getElementById('quiz').appendChild(resultDiv);
+            
+            // Kaydı listeye ekle
+            addScoreToList(studentName, studentNumber, correct, wrong, points);
+            
+            // Excel'e kaydet
+            saveToExcel(studentName, studentNumber, correct, wrong, points);
+        }
+
+        function addScoreToList(name, number, correct, wrong, points) {
+            const scores = JSON.parse(localStorage.getItem('scores') || '[]');
+            
+            const newScore = {
+                name: name,
+                number: number,
+                correct: correct,
+                wrong: wrong,
+                points: points,
+                date: new Date().toLocaleString('tr-TR')
+            };
+            
+            scores.push(newScore);
+            localStorage.setItem('scores', JSON.stringify(scores));
+            
+            // Tabloyu güncelle
+            displayScores(scores);
+        }
+
+        function displayScores(scores) {
+            const tbody = document.getElementById('scoreBody');
+            tbody.innerHTML = '';
+            
+            scores.reverse().forEach((score, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${score.name}</td>
+                    <td>${score.number}</td>
+                    <td>${score.correct}</td>
+                    <td>${score.wrong}</td>
+                    <td>${score.points}</td>
+                    <td>${score.date}</td>
+                `;
+            });
+        }
+
+        function loadScores() {
+            const scores = JSON.parse(localStorage.getItem('scores') || '[]');
+            displayScores(scores);
+        }
+
+        function saveToExcel(name, number, correct, wrong, points) {
+            // Mevcut Excel verilerini al
+            let existingData = [];
+            const savedData = localStorage.getItem('excelData');
+            if (savedData) {
+                existingData = JSON.parse(savedData);
+            }
+            
+            // Yeni kaydı ekle
+            const newRow = {
+                'Ad Soyad': name,
+                'Numara': number,
+                'Doğru': correct,
+                'Yanlış': wrong,
+                'Puan': points,
+                'Tarih': new Date().toLocaleString('tr-TR')
+            };
+            
+            existingData.push(newRow);
+            localStorage.setItem('excelData', JSON.stringify(existingData));
+            
+            // Excel dosyası oluştur
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(existingData);
+            XLSX.utils.book_append_sheet(wb, ws, "Skorlar");
+            
+            // Excel dosyasını indir
+            XLSX.writeFile(wb, `kelime_yarismasi_skorlari.xlsx`);
+        }
+    </script>
+</body>
+</html>
